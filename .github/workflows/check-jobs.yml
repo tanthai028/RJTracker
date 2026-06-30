@@ -1,0 +1,41 @@
+name: Check RJ Early Careers Jobs
+
+on:
+  schedule:
+    # 1 PM UTC = 9 AM EDT / 8 AM EST — covers both EST and EDT without chasing DST
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run job checker
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python check_jobs.py
+
+      - name: Commit updated job state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet previous_jobs.json || (
+            git add previous_jobs.json &&
+            git commit -m "chore: update job state [skip ci]" &&
+            git push
+          )
