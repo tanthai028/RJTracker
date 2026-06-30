@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+from datetime import datetime, timezone
 import requests
 
 WORKDAY_URL = "https://raymondjames.wd1.myworkdayjobs.com/wday/cxs/raymondjames/RaymondJamesEarlyCareers/jobs"
@@ -69,9 +70,19 @@ def save_current(path, jobs):
         json.dump(jobs, f, indent=2)
 
 
-def send_discord_embed(webhook_url, embed):
-    resp = requests.post(webhook_url, json={"embeds": [embed]}, timeout=15)
-    resp.raise_for_status()
+def send_discord_message(webhook_url, embeds, content=None):
+    """Send up to 10 embeds in one Discord message (Discord's per-message limit)."""
+    for i in range(0, len(embeds), 10):
+        chunk = embeds[i:i + 10]
+        payload = {
+            "embeds": chunk,
+            "username": "RJ Job Alerts",
+            "avatar_url": "https://logo.clearbit.com/raymondjames.com",
+        }
+        if content and i == 0:
+            payload["content"] = content
+        resp = requests.post(webhook_url, json=payload, timeout=15)
+        resp.raise_for_status()
 
 
 def build_new_embed(job):
@@ -85,6 +96,7 @@ def build_new_embed(job):
             {"name": "Req #", "value": job["id"], "inline": True},
         ],
         "footer": {"text": "Raymond James Early Careers"},
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -93,6 +105,7 @@ def build_removed_embed(job):
         "title": f"~~{job['title']}~~ (removed)",
         "url": job["url"],
         "color": 0x888888,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "fields": [
             {"name": "Location", "value": job["location"], "inline": True},
             {"name": "Req #", "value": job["id"], "inline": True},
@@ -124,15 +137,21 @@ def main():
         save_current(PREVIOUS_JOBS_FILE, list(current_jobs.values()))
         return
 
-    for job_id in sorted(new_ids):
-        job = current_jobs[job_id]
-        print(f"  [NEW] {job['title']} ({job_id})")
-        send_discord_embed(webhook_url, build_new_embed(job))
+    if new_ids:
+        new_embeds = []
+        for job_id in sorted(new_ids):
+            job = current_jobs[job_id]
+            print(f"  [NEW] {job['title']} ({job_id})")
+            new_embeds.append(build_new_embed(job))
+        send_discord_message(webhook_url, new_embeds)
 
-    for job_id in sorted(removed_ids):
-        job = previous_jobs[job_id]
-        print(f"  [REMOVED] {job['title']} ({job_id})")
-        send_discord_embed(webhook_url, build_removed_embed(job))
+    if removed_ids:
+        removed_embeds = []
+        for job_id in sorted(removed_ids):
+            job = previous_jobs[job_id]
+            print(f"  [REMOVED] {job['title']} ({job_id})")
+            removed_embeds.append(build_removed_embed(job))
+        send_discord_message(webhook_url, removed_embeds)
 
     save_current(PREVIOUS_JOBS_FILE, list(current_jobs.values()))
     print("Done.")
