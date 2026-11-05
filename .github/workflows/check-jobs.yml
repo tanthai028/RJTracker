@@ -17,10 +17,14 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
 
     steps:
       - name: Checkout repo
@@ -39,14 +43,37 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           # Scheduled runs have no inputs, so they fall back to weekly
           MODE: ${{ inputs.mode || 'weekly' }}
-        run: python check_jobs.py --mode "$MODE"
+        # The digest waits in outbox.json until the report page below is live
+        run: python check_jobs.py --mode "$MODE" --defer-post
 
-      - name: Commit updated job state
+      - name: Commit updated job state and report
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add previous_jobs.json last_digest.json 2>/dev/null || git add previous_jobs.json
+          for f in previous_jobs.json last_digest.json docs; do
+            if [ -e "$f" ]; then git add "$f"; fi
+          done
           git diff --cached --quiet || (
             git commit -m "chore: update job state [skip ci]" &&
             git push
           )
+
+      - name: Configure Pages
+        if: hashFiles('outbox.json') != ''
+        uses: actions/configure-pages@v5
+
+      - name: Upload report site
+        if: hashFiles('outbox.json') != ''
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy report to GitHub Pages
+        if: hashFiles('outbox.json') != ''
+        uses: actions/deploy-pages@v4
+
+      - name: Post digest to Discord
+        if: hashFiles('outbox.json') != ''
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python check_jobs.py --post-outbox

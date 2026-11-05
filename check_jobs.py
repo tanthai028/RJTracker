@@ -16,6 +16,11 @@ APPLIED_FACETS = {
 }
 PREVIOUS_JOBS_FILE = "previous_jobs.json"
 LAST_DIGEST_FILE = "last_digest.json"
+# Digest waiting to be posted once the report page is live (see --defer-post)
+OUTBOX_FILE = "outbox.json"
+# Reports are written here and published with GitHub Pages
+SITE_DIR = "docs"
+SITE_URL = "https://tanthai028.github.io/RJTracker"
 
 HEADERS = {
     "Content-Type": "application/json",
@@ -91,26 +96,40 @@ def save_current(path, jobs):
         json.dump(jobs, f, indent=2)
 
 
-def send_discord_digest(webhook_url, embed, html_name, html_body):
-    """Post one embed with the HTML report attached as a file."""
-    resp = requests.post(
-        webhook_url,
-        data={"payload_json": json.dumps({"embeds": [embed]})},
-        files={"files[0]": (html_name, html_body.encode("utf-8"), "text/html")},
-        timeout=30,
-    )
+def send_discord_digest(webhook_url, embed):
+    resp = requests.post(webhook_url, json={"embeds": [embed]}, timeout=30)
     resp.raise_for_status()
 
 
-def build_digest_embed(new_jobs, total_open, resent=False):
+def write_report(report_date, html_body):
+    """Save the report as the site's latest page plus a dated copy; return the dated URL."""
+    os.makedirs(os.path.join(SITE_DIR, "reports"), exist_ok=True)
+    for path in (os.path.join(SITE_DIR, "index.html"), os.path.join(SITE_DIR, "reports", f"{report_date}.html")):
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(html_body)
+    return f"{SITE_URL}/reports/{report_date}.html"
+
+
+def deliver(webhook_url, embed, defer):
+    """Post now, or park the embed in the outbox until the report page is deployed."""
+    if defer:
+        with open(OUTBOX_FILE, "w") as f:
+            json.dump(embed, f, indent=2)
+        print(f"  Digest saved to {OUTBOX_FILE}; post it with --post-outbox after deploying.")
+    else:
+        send_discord_digest(webhook_url, embed)
+
+
+def build_digest_embed(new_jobs, total_open, report_url, resent=False):
     """Weekly embed listing new postings, trimmed to Discord's description limit."""
-    limit = 4000  # Discord caps embed descriptions at 4096 chars
+    header = f"**[Open the full report (search, sort, all {total_open} jobs)]({report_url})**\n"
+    limit = 4000 - len(header)  # Discord caps embed descriptions at 4096 chars
     lines = []
     used = 0
     for i, job in enumerate(new_jobs):
         line = f"• [{job['title']}]({job['url']}) · {job['location']}"
         remaining = len(new_jobs) - i
-        more = f"\n…and {remaining} more in the attached report"
+        more = f"\n…and {remaining} more in the full report"
         if used + len(line) + 1 + len(more) > limit:
             lines.append(more.strip())
             break
@@ -120,9 +139,9 @@ def build_digest_embed(new_jobs, total_open, resent=False):
     title = f"{len(new_jobs)} new Raymond James job(s) this week"
     return {
         "title": f"{title} (resent)" if resent else title,
-        "url": BASE_URL,
+        "url": report_url,
         # Discord rejects an empty description, which a manual send with no new jobs would produce
-        "description": "\n".join(lines) or "No new postings since the last digest. Open postings are in the attached report.",
+        "description": header + ("\n".join(lines) or "No new postings since the last digest."),
         "color": 0x003087,  # Raymond James navy
         "footer": {"text": f"Raymond James Careers · Saint Petersburg area · {total_open} open"},
     }
@@ -274,6 +293,16 @@ def parse_args():
             "resend: post the last digest again without changing saved state."
         ),
     )
+    parser.add_argument(
+        "--defer-post",
+        action="store_true",
+        help=f"write the digest to {OUTBOX_FILE} instead of posting, so CI can deploy the report first",
+    )
+    parser.add_argument(
+        "--post-outbox",
+        action="store_true",
+        help=f"post the digest saved in {OUTBOX_FILE} (if any), then delete it",
+    )
     return parser.parse_args()
 
 
@@ -283,6 +312,16 @@ def main():
     if not webhook_url:
         print("ERROR: DISCORD_WEBHOOK_URL environment variable not set.", file=sys.stderr)
         sys.exit(1)
+
+    if args.post_outbox:
+        if not os.path.exists(OUTBOX_FILE):
+            print("Outbox empty. Nothing to post.")
+            return
+        with open(OUTBOX_FILE) as f:
+            send_discord_digest(webhook_url, json.load(f))
+        os.remove(OUTBOX_FILE)
+        print("Posted digest from outbox.")
+        return
 
     print("Fetching jobs from Workday...")
     raw_jobs = fetch_all_jobs()
@@ -303,9 +342,9 @@ def main():
         report_date = last["date"]
         new_jobs = [j for j in all_jobs if j["id"] in set(last["new_ids"])]
         print(f"  Resending digest from {report_date} ({len(new_jobs)} of its new job(s) still open).")
-        html_body = build_html_report(new_jobs, all_jobs, report_date)
-        embed = build_digest_embed(new_jobs, len(all_jobs), resent=True)
-        send_discord_digest(webhook_url, embed, f"rj-jobs-{report_date}.html", html_body)
+        report_url = write_report(report_date, build_html_report(new_jobs, all_jobs, report_date))
+        embed = build_digest_embed(new_jobs, len(all_jobs), report_url, resent=True)
+        deliver(webhook_url, embed, args.defer_post)
         print("Done.")
         return
 
@@ -324,9 +363,9 @@ def main():
         return
 
     report_date = date.today().isoformat()
-    html_body = build_html_report(new_jobs, all_jobs, report_date)
-    embed = build_digest_embed(new_jobs, len(all_jobs))
-    send_discord_digest(webhook_url, embed, f"rj-jobs-{report_date}.html", html_body)
+    report_url = write_report(report_date, build_html_report(new_jobs, all_jobs, report_date))
+    embed = build_digest_embed(new_jobs, len(all_jobs), report_url)
+    deliver(webhook_url, embed, args.defer_post)
 
     save_current(PREVIOUS_JOBS_FILE, list(current_jobs.values()))
     # Keep the last digest that had jobs, so a forced empty send doesn't blank out resend
