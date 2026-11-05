@@ -121,29 +121,32 @@ def deliver(webhook_url, embed, defer):
 
 
 def build_digest_embed(new_jobs, total_open, report_url, resent=False):
-    """Weekly embed listing new postings, trimmed to Discord's description limit."""
-    header = f"**[Open the full report (search, sort, all {total_open} jobs)]({report_url})**\n"
-    limit = 4000 - len(header)  # Discord caps embed descriptions at 4096 chars
-    lines = []
-    used = 0
-    for i, job in enumerate(new_jobs):
-        line = f"• [{job['title']}]({job['url']}) · {job['location']}"
-        remaining = len(new_jobs) - i
-        more = f"\n…and {remaining} more in the full report"
-        if used + len(line) + 1 + len(more) > limit:
-            lines.append(more.strip())
-            break
-        lines.append(line)
-        used += len(line) + 1
+    """Short digest embed: a clear link to the full report plus a peek at the newest postings."""
+    preview_count = 5
+    newest = sorted(new_jobs, key=lambda j: (posted_days(j["posted_on"]), j["title"]))[:preview_count]
 
-    title = f"{len(new_jobs)} new Raymond James job(s) this week"
+    def short(title, width=60):
+        return title if len(title) <= width else title[: width - 1].rstrip() + "\u2026"
+
+    lines = [
+        f"\U0001F449 **[Tap here to open the full report]({report_url})**",
+        f"Search by title or req #, sort by posted date, and see all {total_open} open St. Pete-area jobs.",
+    ]
+    if newest:
+        lines += ["", "**Newest postings**"]
+        lines += [f"\u2022 [{short(j['title'])}]({j['url']}) \u00b7 {j['posted_on'].replace('Posted ', '')}" for j in newest]
+        if len(new_jobs) > len(newest):
+            lines.append(f"+{len(new_jobs) - len(newest)} more in the full report")
+    else:
+        lines += ["", "No new postings since the last digest."]
+
+    title = f"{len(new_jobs)} new Raymond James job{'s' if len(new_jobs) != 1 else ''} since last digest"
     return {
         "title": f"{title} (resent)" if resent else title,
         "url": report_url,
-        # Discord rejects an empty description, which a manual send with no new jobs would produce
-        "description": header + ("\n".join(lines) or "No new postings since the last digest."),
+        "description": "\n".join(lines),
         "color": 0x003087,  # Raymond James navy
-        "footer": {"text": f"Raymond James Careers · Saint Petersburg area · {total_open} open"},
+        "footer": {"text": "Raymond James Careers \u00b7 Saint Petersburg area \u00b7 digests every Monday and Thursday"},
     }
 
 
@@ -167,30 +170,70 @@ REPORT_TEMPLATE = """<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Raymond James Jobs · __DATE__</title>
 <style>
-  body { font-family: system-ui, sans-serif; margin: 0; padding: 24px 16px; color: #1a1a1a; background: #f6f7f9; }
+  :root {
+    color-scheme: light;
+    --bg: #f6f7f9; --surface: #ffffff; --text: #1a1a1a; --muted: #555b66;
+    --border: #e3e5e8; --input-border: #c4c8ce; --accent: #003087; --link: #003087;
+    --head-bg: #003087; --head-text: #ffffff; --hover: #eef3fb;
+    --badge-bg: #e8a33d; --badge-text: #1a1a1a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #111318; --surface: #1b1e25; --text: #e6e8ec; --muted: #9aa1ad;
+      --border: #2c313b; --input-border: #3a404c; --accent: #8fb2ff; --link: #8fb2ff;
+      --head-bg: #1f3a75; --head-text: #ffffff; --hover: #232835;
+      --badge-bg: #e8a33d; --badge-text: #1a1a1a;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #111318; --surface: #1b1e25; --text: #e6e8ec; --muted: #9aa1ad;
+    --border: #2c313b; --input-border: #3a404c; --accent: #8fb2ff; --link: #8fb2ff;
+    --head-bg: #1f3a75; --head-text: #ffffff; --hover: #232835;
+    --badge-bg: #e8a33d; --badge-text: #1a1a1a;
+  }
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 24px 16px; color: var(--text); background: var(--bg); }
   main { max-width: 1000px; margin: 0 auto; }
-  h1 { color: #003087; margin-bottom: 4px; }
-  .sub { color: #555; margin-top: 0; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  h1 { color: var(--accent); margin: 0 0 4px; }
+  .sub { color: var(--muted); margin-top: 0; }
+  #theme { flex: none; padding: 6px 12px; font-size: 14px; border: 1px solid var(--input-border); border-radius: 6px; background: var(--surface); color: var(--text); cursor: pointer; }
   .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 20px 0 12px; }
-  .controls input[type=search] { flex: 1 1 260px; padding: 8px 10px; font-size: 15px; border: 1px solid #c4c8ce; border-radius: 6px; }
-  .controls select { padding: 8px; font-size: 15px; border: 1px solid #c4c8ce; border-radius: 6px; background: #fff; }
+  .controls input[type=search] { flex: 1 1 260px; padding: 8px 10px; font-size: 15px; border: 1px solid var(--input-border); border-radius: 6px; background: var(--surface); color: var(--text); }
+  .controls select { padding: 8px; font-size: 15px; border: 1px solid var(--input-border); border-radius: 6px; background: var(--surface); color: var(--text); }
   .controls label { display: flex; gap: 6px; align-items: center; font-size: 15px; }
-  .count { color: #555; font-size: 14px; margin-bottom: 8px; }
+  .count { color: var(--muted); font-size: 14px; margin-bottom: 8px; }
   .wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; background: #fff; }
-  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e3e5e8; vertical-align: top; }
-  th { background: #003087; color: #fff; font-weight: 600; white-space: nowrap; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--head-bg); color: var(--head-text); font-weight: 600; white-space: nowrap; }
   td.req, td.posted { white-space: nowrap; }
-  tr:hover td { background: #eef3fb; }
-  a { color: #003087; }
-  .badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: #e8a33d; color: #1a1a1a; font-size: 12px; font-weight: 600; }
-  .empty { color: #555; font-style: italic; padding: 12px 0; }
+  tr:hover td { background: var(--hover); }
+  a { color: var(--link); }
+  .badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--badge-bg); color: var(--badge-text); font-size: 12px; font-weight: 600; }
+  .empty { color: var(--muted); font-style: italic; padding: 12px 0; }
+  /* Phones: one card per job instead of a cramped four-column table */
+  @media (max-width: 600px) {
+    thead { display: none; }
+    table, tbody, tr, td { display: block; }
+    tr { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    td { border: 0; padding: 2px 0; }
+    td:first-child { font-size: 16px; padding-bottom: 4px; }
+    td.req, td.loc, td.posted { display: inline; color: var(--muted); font-size: 14px; }
+    td.loc::before, td.posted::before { content: " · "; }
+  }
 </style>
 </head>
 <body>
 <main>
-<h1>Raymond James Careers</h1>
-<p class="sub">Saint Petersburg, FL area · week of __DATE__ · __TOTAL__ open postings · __NEW__ new this week · older than 30 days hidden</p>
+<header>
+  <div>
+    <h1>Raymond James Careers</h1>
+    <p class="sub">Saint Petersburg, FL area · digest of __DATE__ · __TOTAL__ open postings · __NEW__ new since last digest · older than 30 days hidden</p>
+  </div>
+  <button id="theme" type="button" aria-label="Toggle dark mode">Dark mode</button>
+</header>
 
 <div class="controls">
   <input type="search" id="q" placeholder="Search title or requisition # (e.g. analyst, R-0013745)" aria-label="Search title or requisition number">
@@ -199,7 +242,7 @@ REPORT_TEMPLATE = """<!doctype html>
     <option value="oldest">Posted: oldest first</option>
     <option value="title">Title A–Z</option>
   </select>
-  <label><input type="checkbox" id="onlyNew"> New this week only</label>
+  <label><input type="checkbox" id="onlyNew"> New since last digest only</label>
 </div>
 <div class="count" id="count"></div>
 
@@ -214,6 +257,26 @@ __ROWS__
 <p class="empty" id="empty" hidden>No postings match.</p>
 </main>
 <script>
+  const themeBtn = document.getElementById("theme");
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  function isDark() {
+    const t = document.documentElement.dataset.theme;
+    return t ? t === "dark" : darkQuery.matches;
+  }
+  function paintThemeButton() { themeBtn.textContent = isDark() ? "Light mode" : "Dark mode"; }
+  try {
+    const saved = localStorage.getItem("rj-theme");
+    if (saved) document.documentElement.dataset.theme = saved;
+  } catch (e) {}
+  themeBtn.addEventListener("click", () => {
+    const next = isDark() ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("rj-theme", next); } catch (e) {}
+    paintThemeButton();
+  });
+  darkQuery.addEventListener("change", paintThemeButton);
+  paintThemeButton();
+
   const q = document.getElementById("q");
   const sort = document.getElementById("sort");
   const onlyNew = document.getElementById("onlyNew");
@@ -256,7 +319,7 @@ def build_html_report(new_jobs, all_jobs, report_date):
         f'<td><a href="{escape(j["url"])}">{escape(j["title"])}</a>'
         f'{"<span class=badge>NEW</span>" if j["id"] in new_ids else ""}</td>'
         f'<td class="req">{escape(j["id"])}</td>'
-        f"<td>{escape(j['location'])}</td>"
+        f'<td class="loc">{escape(j["location"])}</td>'
         f'<td class="posted">{escape(j["posted_on"])}</td>'
         "</tr>"
         for j in all_jobs
@@ -289,7 +352,7 @@ def parse_args():
         default="weekly",
         help=(
             "weekly: post only if there are new jobs (scheduled run). "
-            "send: post now even with no new jobs, and start a new week from here. "
+            "send: post now even with no new jobs; the next scheduled digest only shows jobs after this. "
             "resend: post the last digest again without changing saved state."
         ),
     )

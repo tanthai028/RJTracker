@@ -1,13 +1,13 @@
-name: Weekly RJ Jobs Digest
+name: RJ Jobs Digest
 
 on:
   schedule:
-    # Mondays, 1 PM UTC = 9 AM EDT / 8 AM EST — covers both EST and EDT without chasing DST
-    - cron: "0 13 * * 1"
+    # Mondays and Thursdays, 1 PM UTC = 9 AM EDT / 8 AM EST — covers both EST and EDT without chasing DST
+    - cron: "0 13 * * 1,4"
   workflow_dispatch:
     inputs:
       mode:
-        description: "send = post now and start a new week; resend = repost the last digest; weekly = same as the Monday run"
+        description: "send = post now (next scheduled digest only shows jobs after this); resend = repost the last digest; weekly = same as the scheduled run"
         type: choice
         options:
           - send
