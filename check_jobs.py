@@ -294,18 +294,22 @@ __ROWS__
       title: (a, b) => a.dataset.title.localeCompare(b.dataset.title),
     };
     let shown = 0;
+    // Rebuild the table from matching rows only, so no stylesheet can bring hidden rows back
+    body.textContent = "";
     rows.sort(sorters[sort.value]).forEach(row => {
       const match = (!term || row.dataset.title.includes(term) || row.dataset.req.includes(term))
         && (!onlyNew.checked || row.dataset.new === "1");
-      row.hidden = !match;
-      if (match) shown++;
-      body.appendChild(row);
+      if (match) {
+        shown++;
+        body.appendChild(row);
+      }
     });
     document.getElementById("count").textContent = `Showing ${shown} of ${rows.length}`;
     document.getElementById("empty").hidden = shown > 0;
   }
 
-  [q, sort, onlyNew].forEach(el => el.addEventListener("input", update));
+  // Listen to both events: older Safari only fires "change" for selects and checkboxes
+  [q, sort, onlyNew].forEach(el => ["input", "change"].forEach(type => el.addEventListener(type, update)));
   update();
 </script>
 </body>
