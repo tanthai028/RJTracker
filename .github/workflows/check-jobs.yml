@@ -1,10 +1,19 @@
-name: Check RJ Early Careers Jobs
+name: Weekly RJ Jobs Digest
 
 on:
   schedule:
-    # 1 PM UTC = 9 AM EDT / 8 AM EST — covers both EST and EDT without chasing DST
-    - cron: "0 13 * * *"
+    # Mondays, 1 PM UTC = 9 AM EDT / 8 AM EST — covers both EST and EDT without chasing DST
+    - cron: "0 13 * * 1"
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "send = post now and start a new week; resend = repost the last digest; weekly = same as the Monday run"
+        type: choice
+        options:
+          - send
+          - resend
+          - weekly
+        default: send
 
 permissions:
   contents: write
@@ -28,14 +37,16 @@ jobs:
       - name: Run job checker
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: python check_jobs.py
+          # Scheduled runs have no inputs, so they fall back to weekly
+          MODE: ${{ inputs.mode || 'weekly' }}
+        run: python check_jobs.py --mode "$MODE"
 
       - name: Commit updated job state
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git diff --quiet previous_jobs.json || (
-            git add previous_jobs.json &&
+          git add previous_jobs.json last_digest.json 2>/dev/null || git add previous_jobs.json
+          git diff --cached --quiet || (
             git commit -m "chore: update job state [skip ci]" &&
             git push
           )
