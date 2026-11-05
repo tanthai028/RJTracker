@@ -199,9 +199,10 @@ REPORT_TEMPLATE = """<!doctype html>
   h1 { color: var(--accent); margin: 0 0 4px; }
   .sub { color: var(--muted); margin-top: 0; }
   #theme { flex: none; padding: 6px 12px; font-size: 14px; border: 1px solid var(--input-border); border-radius: 6px; background: var(--surface); color: var(--text); cursor: pointer; }
+  /* Inputs stay at 16px or larger: iOS Safari zooms the page into smaller ones on tap */
   .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 20px 0 12px; }
-  .controls input[type=search] { flex: 1 1 260px; padding: 8px 10px; font-size: 15px; border: 1px solid var(--input-border); border-radius: 6px; background: var(--surface); color: var(--text); }
-  .controls select { padding: 8px; font-size: 15px; border: 1px solid var(--input-border); border-radius: 6px; background: var(--surface); color: var(--text); }
+  .controls input[type=search] { flex: 1 1 260px; padding: 8px 10px; font-size: 16px; border: 1px solid var(--input-border); border-radius: 6px; background: var(--surface); color: var(--text); }
+  .controls select { padding: 8px; font-size: 16px; border: 1px solid var(--input-border); border-radius: 6px; background: var(--surface); color: var(--text); }
   .controls label { display: flex; gap: 6px; align-items: center; font-size: 15px; }
   .count { color: var(--muted); font-size: 14px; margin-bottom: 8px; }
   .wrap { overflow-x: auto; }
@@ -349,12 +350,13 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Post the weekly Raymond James jobs digest to Discord.")
     parser.add_argument(
         "--mode",
-        choices=["weekly", "send", "resend"],
+        choices=["weekly", "send", "resend", "report"],
         default="weekly",
         help=(
             "weekly: post only if there are new jobs (scheduled run). "
             "send: post now even with no new jobs; the next scheduled digest only shows jobs after this. "
-            "resend: post the last digest again without changing saved state."
+            "resend: post the last digest again without changing saved state. "
+            "report: rebuild the last digest's report page only, without posting."
         ),
     )
     parser.add_argument(
@@ -397,7 +399,7 @@ def main():
     print(f"  Skipped {len(parsed) - len(current_jobs)} posting(s) older than 30 days.")
     all_jobs = sorted(current_jobs.values(), key=lambda j: j["title"])
 
-    if args.mode == "resend":
+    if args.mode in ("resend", "report"):
         # Rebuild the last digest from today's listings; saved state is left untouched
         last = load_last_digest(LAST_DIGEST_FILE)
         if last is None:
@@ -405,8 +407,11 @@ def main():
             sys.exit(1)
         report_date = last["date"]
         new_jobs = [j for j in all_jobs if j["id"] in set(last["new_ids"])]
-        print(f"  Resending digest from {report_date} ({len(new_jobs)} of its new job(s) still open).")
+        print(f"  Rebuilding digest from {report_date} ({len(new_jobs)} of its new job(s) still open).")
         report_url = write_report(report_date, build_html_report(new_jobs, all_jobs, report_date))
+        if args.mode == "report":
+            print(f"  Report rebuilt: {report_url}")
+            return
         embed = build_digest_embed(new_jobs, len(all_jobs), report_url, resent=True)
         deliver(webhook_url, embed, args.defer_post)
         print("Done.")

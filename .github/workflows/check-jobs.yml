@@ -7,11 +7,12 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "send = post now (next scheduled digest only shows jobs after this); resend = repost the last digest; weekly = same as the scheduled run"
+        description: "send = post now (next scheduled digest only shows jobs after this); resend = repost the last digest; report = rebuild the report page only, no Discord post; weekly = same as the scheduled run"
         type: choice
         options:
           - send
           - resend
+          - report
           - weekly
         default: send
 
@@ -59,17 +60,17 @@ jobs:
           )
 
       - name: Configure Pages
-        if: hashFiles('outbox.json') != ''
+        if: hashFiles('outbox.json') != '' || inputs.mode == 'report'
         uses: actions/configure-pages@v5
 
       - name: Upload report site
-        if: hashFiles('outbox.json') != ''
+        if: hashFiles('outbox.json') != '' || inputs.mode == 'report'
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs
 
       - name: Deploy report to GitHub Pages
-        if: hashFiles('outbox.json') != ''
+        if: hashFiles('outbox.json') != '' || inputs.mode == 'report'
         uses: actions/deploy-pages@v4
 
       - name: Post digest to Discord
