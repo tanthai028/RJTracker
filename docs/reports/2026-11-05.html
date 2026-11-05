@@ -48,6 +48,8 @@
   a { color: var(--link); }
   .badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--badge-bg); color: var(--badge-text); font-size: 12px; font-weight: 600; }
   .empty { color: var(--muted); font-style: italic; padding: 12px 0; }
+  /* Search hides rows with the hidden attribute; keep that winning over the phone card layout */
+  [hidden] { display: none !important; }
   /* Phones: one card per job instead of a cramped table */
   @media (max-width: 600px) {
     thead { display: none; }
