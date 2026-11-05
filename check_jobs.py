@@ -213,15 +213,15 @@ REPORT_TEMPLATE = """<!doctype html>
   a { color: var(--link); }
   .badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--badge-bg); color: var(--badge-text); font-size: 12px; font-weight: 600; }
   .empty { color: var(--muted); font-style: italic; padding: 12px 0; }
-  /* Phones: one card per job instead of a cramped four-column table */
+  /* Phones: one card per job instead of a cramped table */
   @media (max-width: 600px) {
     thead { display: none; }
     table, tbody, tr, td { display: block; }
     tr { padding: 10px 12px; border-bottom: 1px solid var(--border); }
     td { border: 0; padding: 2px 0; }
     td:first-child { font-size: 16px; padding-bottom: 4px; }
-    td.req, td.loc, td.posted { display: inline; color: var(--muted); font-size: 14px; }
-    td.loc::before, td.posted::before { content: " · "; }
+    td.req, td.posted { display: inline; color: var(--muted); font-size: 14px; }
+    td.posted::before { content: " · "; }
   }
 </style>
 </head>
@@ -248,7 +248,7 @@ REPORT_TEMPLATE = """<!doctype html>
 
 <div class="wrap">
 <table>
-  <thead><tr><th>Title</th><th>Req #</th><th>Location</th><th>Posted</th></tr></thead>
+  <thead><tr><th>Title</th><th>Req #</th><th>Posted</th></tr></thead>
   <tbody id="rows">
 __ROWS__
   </tbody>
@@ -319,7 +319,6 @@ def build_html_report(new_jobs, all_jobs, report_date):
         f'<td><a href="{escape(j["url"])}">{escape(j["title"])}</a>'
         f'{"<span class=badge>NEW</span>" if j["id"] in new_ids else ""}</td>'
         f'<td class="req">{escape(j["id"])}</td>'
-        f'<td class="loc">{escape(j["location"])}</td>'
         f'<td class="posted">{escape(j["posted_on"])}</td>'
         "</tr>"
         for j in all_jobs
