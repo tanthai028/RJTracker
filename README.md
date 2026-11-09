@@ -1,4 +1,4 @@
-# Careers Page Monitor
+# RJ Job Tracker
 
 **A serverless bot that watches the Raymond James job board for Saint Petersburg, FL and posts a twice-weekly digest to Discord, with a link to a searchable report page.**
 
