@@ -1,4 +1,4 @@
-# RJ Job Tracker
+# Job Board Monitor
 
 **A serverless bot that watches the Raymond James job board for Saint Petersburg, FL and posts a twice-weekly digest to Discord, with a link to a searchable report page.**
 
@@ -6,11 +6,11 @@ Built with Python, GitHub Actions, GitHub Pages, Workday's job search API and Di
 
 **Live report:** [tanthai028.github.io/RJTracker](https://tanthai028.github.io/RJTracker/)
 
-<img src="docs/screenshots/report-desktop.png" alt="The report page: a table of open Raymond James jobs with search, sort, and NEW badges on postings since the last digest" width="800">
+<img src="docs/screenshots/report-desktop.webp" alt="The report page in dark mode: a searchable table of open Raymond James jobs, with a NEW badge on postings since the last digest" width="800">
 
 *The report page that each digest links to. New postings since the last digest are tagged NEW.*
 
-<img src="docs/screenshots/report-phone-dark.png" alt="The same report on a phone in dark mode, with each job shown as a card" width="300">
+<img src="docs/screenshots/report-phone.webp" alt="The same report on a phone, with each job shown as a card" width="300">
 
 *On a phone, in dark mode. Each job becomes a card.*
 
