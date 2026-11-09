@@ -9,6 +9,7 @@ import requests
 
 WORKDAY_URL = "https://raymondjames.wd1.myworkdayjobs.com/wday/cxs/raymondjames/RaymondJamesCareers/jobs"
 BASE_URL = "https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers"
+SEARCH_URL = f"{BASE_URL}?geotagText=US/33703/Saint%20Petersburg&distance=a538cdb60a631000078a2c60ed1700f3"
 # Saint Petersburg, FL (33703) location search with the site's distance facet
 APPLIED_FACETS = {
     "geotagText": ["US/33703/Saint%20Petersburg"],
@@ -21,6 +22,8 @@ OUTBOX_FILE = "outbox.json"
 # Reports are written here and published with GitHub Pages
 SITE_DIR = "docs"
 SITE_URL = "https://tanthai028.github.io/RJTracker"
+# Workflow page with the "Run workflow" button for send/resend/report
+ACTIONS_URL = "https://github.com/tanthai028/RJTracker/actions/workflows/check-jobs.yml"
 
 HEADERS = {
     "Content-Type": "application/json",
@@ -129,24 +132,23 @@ def build_digest_embed(new_jobs, total_open, report_url, resent=False):
         return title if len(title) <= width else title[: width - 1].rstrip() + "\u2026"
 
     lines = [
-        f"\U0001F449 **[Tap here to open the full report]({report_url})**",
-        f"Search by title or req #, sort by posted date, and see all {total_open} open St. Pete-area jobs.",
+        f"**[Open the full list of {total_open} jobs]({report_url})**",
     ]
     if newest:
-        lines += ["", "**Newest postings**"]
-        lines += [f"\u2022 [{short(j['title'])}]({j['url']}) \u00b7 {j['posted_on'].replace('Posted ', '')}" for j in newest]
+        lines.append("")
+        lines += [f"- [{short(j['title'])}]({j['url']}), {j['posted_on'].replace('Posted ', '').lower()}" for j in newest]
         if len(new_jobs) > len(newest):
-            lines.append(f"+{len(new_jobs) - len(newest)} more in the full report")
+            lines.append(f"...and {len(new_jobs) - len(newest)} more")
     else:
-        lines += ["", "No new postings since the last digest."]
+        lines += ["", "Nothing new since the last digest."]
 
-    title = f"{len(new_jobs)} new Raymond James job{'s' if len(new_jobs) != 1 else ''} since last digest"
+    title = f"{len(new_jobs)} new Raymond James job{'s' if len(new_jobs) != 1 else ''}"
     return {
         "title": f"{title} (resent)" if resent else title,
         "url": report_url,
         "description": "\n".join(lines),
         "color": 0x003087,  # Raymond James navy
-        "footer": {"text": "Raymond James Careers \u00b7 Saint Petersburg area \u00b7 digests every Monday and Thursday"},
+        "footer": {"text": "St. Petersburg, FL. Sent Mondays and Thursdays."},
     }
 
 
@@ -168,7 +170,7 @@ REPORT_TEMPLATE = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Raymond James Jobs · __DATE__</title>
+<title>Raymond James Jobs</title>
 <style>
   :root {
     color-scheme: light;
@@ -213,7 +215,10 @@ REPORT_TEMPLATE = """<!doctype html>
   tr:hover td { background: var(--hover); }
   a { color: var(--link); }
   .badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--badge-bg); color: var(--badge-text); font-size: 12px; font-weight: 600; }
+  .save { background: none; border: 0; padding: 0 6px 0 0; font-size: 18px; line-height: 1; color: var(--muted); cursor: pointer; }
+  .save[aria-pressed="true"] { color: var(--badge-bg); }
   .empty { color: var(--muted); font-style: italic; padding: 12px 0; }
+  footer { margin-top: 24px; color: var(--muted); font-size: 14px; }
   /* Search hides rows with the hidden attribute; keep that winning over the phone card layout */
   [hidden] { display: none !important; }
   /* Phones: one card per job instead of a cramped table */
@@ -224,7 +229,7 @@ REPORT_TEMPLATE = """<!doctype html>
     td { border: 0; padding: 2px 0; }
     td:first-child { font-size: 16px; padding-bottom: 4px; }
     td.req, td.posted { display: inline; color: var(--muted); font-size: 14px; }
-    td.posted::before { content: " · "; }
+    td.posted::before { content: ", "; }
   }
 </style>
 </head>
@@ -233,19 +238,20 @@ REPORT_TEMPLATE = """<!doctype html>
 <header>
   <div>
     <h1>Raymond James Careers</h1>
-    <p class="sub">Saint Petersburg, FL area · digest of __DATE__ · __TOTAL__ open postings · __NEW__ new since last digest · older than 30 days hidden</p>
+    <p class="sub">__TOTAL__ open jobs from <a href="__SOURCE__">this Raymond James search</a> (St. Petersburg, FL). __NEW_TEXT__ Updated __DATE__.</p>
   </div>
   <button id="theme" type="button" aria-label="Toggle dark mode">Dark mode</button>
 </header>
 
 <div class="controls">
-  <input type="search" id="q" placeholder="Search title or requisition # (e.g. analyst, R-0013745)" aria-label="Search title or requisition number">
+  <input type="search" id="q" placeholder="Search by title or req #" aria-label="Search title or requisition number">
   <select id="sort" aria-label="Sort">
-    <option value="newest">Posted: newest first</option>
-    <option value="oldest">Posted: oldest first</option>
-    <option value="title">Title A–Z</option>
+    <option value="newest">Newest first</option>
+    <option value="oldest">Oldest first</option>
+    <option value="title">By title</option>
   </select>
-  <label><input type="checkbox" id="onlyNew"> New since last digest only</label>
+  <label><input type="checkbox" id="onlyNew"> New only</label>
+  <label><input type="checkbox" id="onlySaved"> Saved only</label>
 </div>
 <div class="count" id="count"></div>
 
@@ -257,7 +263,8 @@ __ROWS__
   </tbody>
 </table>
 </div>
-<p class="empty" id="empty" hidden>No postings match.</p>
+<p class="empty" id="empty" hidden>No jobs match.</p>
+<footer><a href="__ACTIONS__">Run the digest workflow on GitHub</a> (send, resend or refresh this page; repo owner only)</footer>
 </main>
 <script>
   const themeBtn = document.getElementById("theme");
@@ -283,8 +290,30 @@ __ROWS__
   const q = document.getElementById("q");
   const sort = document.getElementById("sort");
   const onlyNew = document.getElementById("onlyNew");
+  const onlySaved = document.getElementById("onlySaved");
   const body = document.getElementById("rows");
   const rows = Array.from(body.rows);
+
+  // Saved jobs are kept per browser, keyed by req #, so they carry over to later reports
+  let saved = new Set();
+  try { saved = new Set(JSON.parse(localStorage.getItem("rj-saved") || "[]")); } catch (e) {}
+  function paintSave(row) {
+    const btn = row.querySelector(".save");
+    const on = saved.has(row.dataset.req);
+    btn.textContent = on ? "\\u2605" : "\\u2606";
+    btn.setAttribute("aria-pressed", on);
+    btn.title = on ? "Remove from saved" : "Save";
+  }
+  rows.forEach(paintSave);
+  body.addEventListener("click", e => {
+    const btn = e.target.closest(".save");
+    if (!btn) return;
+    const row = btn.closest("tr");
+    if (saved.has(row.dataset.req)) saved.delete(row.dataset.req); else saved.add(row.dataset.req);
+    try { localStorage.setItem("rj-saved", JSON.stringify([...saved])); } catch (e) {}
+    paintSave(row);
+    if (onlySaved.checked) update();
+  });
 
   function update() {
     const term = q.value.trim().toLowerCase();
@@ -298,18 +327,19 @@ __ROWS__
     body.textContent = "";
     rows.sort(sorters[sort.value]).forEach(row => {
       const match = (!term || row.dataset.title.includes(term) || row.dataset.req.includes(term))
-        && (!onlyNew.checked || row.dataset.new === "1");
+        && (!onlyNew.checked || row.dataset.new === "1")
+        && (!onlySaved.checked || saved.has(row.dataset.req));
       if (match) {
         shown++;
         body.appendChild(row);
       }
     });
-    document.getElementById("count").textContent = `Showing ${shown} of ${rows.length}`;
+    document.getElementById("count").textContent = shown === rows.length ? `${shown} jobs` : `${shown} of ${rows.length} jobs`;
     document.getElementById("empty").hidden = shown > 0;
   }
 
   // Listen to both events: older Safari only fires "change" for selects and checkboxes
-  [q, sort, onlyNew].forEach(el => ["input", "change"].forEach(type => el.addEventListener(type, update)));
+  [q, sort, onlyNew, onlySaved].forEach(el => ["input", "change"].forEach(type => el.addEventListener(type, update)));
   update();
 </script>
 </body>
@@ -320,10 +350,12 @@ __ROWS__
 def build_html_report(new_jobs, all_jobs, report_date):
     """Self-contained HTML page of open postings with search by title/req # and sort by posted date."""
     new_ids = {j["id"] for j in new_jobs}
+    d = date.fromisoformat(report_date)
     rows = "\n".join(
         f'    <tr data-title="{escape(j["title"].lower())}" data-req="{escape(j["id"].lower())}" '
         f'data-days="{posted_days(j["posted_on"])}" data-new="{int(j["id"] in new_ids)}">'
-        f'<td><a href="{escape(j["url"])}">{escape(j["title"])}</a>'
+        '<td><button type="button" class="save" aria-label="Save job"></button>'
+        f'<a href="{escape(j["url"])}">{escape(j["title"])}</a>'
         f'{"<span class=badge>NEW</span>" if j["id"] in new_ids else ""}</td>'
         f'<td class="req">{escape(j["id"])}</td>'
         f'<td class="posted">{escape(j["posted_on"])}</td>'
@@ -331,9 +363,11 @@ def build_html_report(new_jobs, all_jobs, report_date):
         for j in all_jobs
     )
     return (
-        REPORT_TEMPLATE.replace("__DATE__", escape(report_date))
+        REPORT_TEMPLATE.replace("__DATE__", f"{d:%B} {d.day}, {d.year}")
+        .replace("__SOURCE__", escape(SEARCH_URL))
+        .replace("__ACTIONS__", escape(ACTIONS_URL))
         .replace("__TOTAL__", str(len(all_jobs)))
-        .replace("__NEW__", str(len(new_jobs)))
+        .replace("__NEW_TEXT__", f"{len(new_jobs)} new since the last digest." if new_jobs else "Nothing new since the last digest.")
         .replace("__ROWS__", rows)
     )
 

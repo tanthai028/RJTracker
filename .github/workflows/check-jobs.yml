@@ -2,7 +2,7 @@ name: RJ Jobs Digest
 
 on:
   schedule:
-    # Mondays and Thursdays, 1 PM UTC = 9 AM EDT / 8 AM EST — covers both EST and EDT without chasing DST
+    # Mondays and Thursdays, 1 PM UTC = 9 AM EDT / 8 AM EST. Covers both EST and EDT without chasing DST
     - cron: "0 13 * * 1,4"
   workflow_dispatch:
     inputs:

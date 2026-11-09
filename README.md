@@ -2,7 +2,7 @@
 
 **A serverless bot that watches the Raymond James job board for Saint Petersburg, FL and posts a twice-weekly digest to Discord, with a link to a searchable report page.**
 
-Python · GitHub Actions · GitHub Pages · Workday API · Discord webhooks · zero hosting cost
+Built with Python, GitHub Actions, GitHub Pages, Workday's job search API and Discord webhooks. It costs nothing to host.
 
 **Live report:** [tanthai028.github.io/RJTracker](https://tanthai028.github.io/RJTracker/)
 
@@ -25,8 +25,8 @@ I set myself a few rules: it had to be free, it had to run without my laptop bei
 - **Every Monday and Thursday at 9 AM ET**, it pulls every listing within the board's Saint Petersburg, FL distance filter.
 - **It skips stale postings.** Anything Workday labels "Posted 30+ Days Ago" is left out, since those roles are rarely still hiring.
 - **It compares with the last digest** and finds the postings that are new since then.
-- **It posts one short Discord message:** a "Tap here to open the full report" link, the 5 newest postings, and a count of the rest. If nothing is new, it stays silent.
-- **It publishes a report page** to GitHub Pages. You can search it by title or requisition number, sort it by posted date or title, and filter it to new postings only. It has a light/dark toggle and a card layout on phones.
+- **It posts one short Discord message:** a link to the full list, the 5 newest postings, and a count of the rest. If nothing is new, it stays silent.
+- **It publishes a report page** to GitHub Pages. You can search it by title or requisition number, sort it by posted date or title, and filter it to new postings only. You can star jobs to save them (kept in your browser) and show only saved ones. It has a light/dark toggle, a card layout on phones, a link to the exact Workday search it reads, and a link to run the workflow.
 - **Removed postings drop off quietly.** No "this job closed" messages.
 
 It has been running since June 2026, and the bot has committed 100+ state updates to this repo's history.
@@ -132,4 +132,4 @@ requirements.txt
 
 Built by **Tan Thai** during my own job search. | [Portfolio](https://tan-portfolio-taupe.vercel.app) | [LinkedIn](https://linkedin.com/in/tanthai028) | [GitHub](https://github.com/tanthai028)
 
-Other projects: [Stride](https://github.com/tanthai028/stride-desktop-app) (desktop app for working through job applications) · [yt-transcriber](https://github.com/tanthai028/yt-transcriber) · [YTBookmarks](https://github.com/tanthai028/YTBookmark)
+Other projects: [Stride](https://github.com/tanthai028/stride-desktop-app) (desktop app for working through job applications), [yt-transcriber](https://github.com/tanthai028/yt-transcriber), [YTBookmarks](https://github.com/tanthai028/YTBookmark)
