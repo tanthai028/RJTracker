@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raymond James Jobs</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f6f7f9; --surface: #ffffff; --text: #1a1a1a; --muted: #555b66;
+    --border: #e3e5e8; --input-border: #c4c8ce; --accent: #003087; --link: #003087;
+    --head-bg: #003087; --head-text: #ffffff; --hover: #eef3fb;
+    --badge-bg: #e8a33d; --badge-text: #1a1a1a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #111318; --surface: #1b1e25; --text: #e6e8ec; --muted: #9aa1ad;
+      --border: #2c313b; --input-border: #3a404c; --accent: #8fb2ff; --link: #8fb2ff;
+      --head-bg: #1f3a75; --head-text: #ffffff; --hover: #232835;
+      --badge-bg: #e8a33d; --badge-text: #1a1a1a;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #111318; --surface: #1b1e25; --text: #e6e8ec; --muted: #9aa1ad;
+    --border: #2c313b; --input-border: #3a404c; --accent: #8fb2ff; --link: #8fb2ff;
+    --head-bg: #1f3a75; --head-text: #ffffff; --hover: #232835;
+    --badge-bg: #e8a33d; --badge-text: #1a1a1a;
+  }
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 24px 16px; color: var(--text); background: var(--bg); }
+  main { max-width: 1000px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  h1 { color: var(--accent); margin: 0 0 4px; }
+  .sub { color: var(--muted); margin-top: 0; }
+  #theme { flex: none; padding: 6px 12px; font-size: 14px; border: 1px solid var(--input-border); border-radius: 6px; background: var(--surface); color: var(--text); cursor: pointer; }
+  /* Inputs stay at 16px or larger: iOS Safari zooms the page into smaller ones on tap */
+  .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 20px 0 12px; }
+  .controls input[type=search] { flex: 1 1 260px; padding: 8px 10px; font-size: 16px; border: 1px solid var(--input-border); border-radius: 6px; background: var(--surface); color: var(--text); }
+  .controls select { padding: 8px; font-size: 16px; border: 1px solid var(--input-border); border-radius: 6px; background: var(--surface); color: var(--text); }
+  .controls label { display: flex; gap: 6px; align-items: center; font-size: 15px; }
+  .count { color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+  .wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--head-bg); color: var(--head-text); font-weight: 600; white-space: nowrap; }
+  td.req, td.posted { white-space: nowrap; }
+  tr:hover td { background: var(--hover); }
+  a { color: var(--link); }
+  .badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--badge-bg); color: var(--badge-text); font-size: 12px; font-weight: 600; }
+  .save { background: none; border: 0; padding: 0 6px 0 0; font-size: 18px; line-height: 1; color: var(--muted); cursor: pointer; }
+  .save[aria-pressed="true"] { color: var(--badge-bg); }
+  .empty { color: var(--muted); font-style: italic; padding: 12px 0; }
+  footer { margin-top: 24px; color: var(--muted); font-size: 14px; }
+  /* Search hides rows with the hidden attribute; keep that winning over the phone card layout */
+  [hidden] { display: none !important; }
+  /* Phones: one card per job instead of a cramped table */
+  @media (max-width: 600px) {
+    thead { display: none; }
+    table, tbody, tr, td { display: block; }
+    tr { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    td { border: 0; padding: 2px 0; }
+    td:first-child { font-size: 16px; padding-bottom: 4px; }
+    td.req, td.posted { display: inline; color: var(--muted); font-size: 14px; }
+    td.posted::before { content: ", "; }
+  }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <h1>Raymond James Careers</h1>
+    <p class="sub">88 open jobs from <a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers?geotagText=US/33703/Saint%20Petersburg&amp;distance=a538cdb60a631000078a2c60ed1700f3">this Raymond James search</a> (St. Petersburg, FL). 20 new since the last digest. Updated November 12, 2026.</p>
+  </div>
+  <button id="theme" type="button" aria-label="Toggle dark mode">Dark mode</button>
+</header>
+
+<div class="controls">
+  <input type="search" id="q" placeholder="Search by title or req #" aria-label="Search title or requisition number">
+  <select id="sort" aria-label="Sort">
+    <option value="newest">Newest first</option>
+    <option value="oldest">Oldest first</option>
+    <option value="title">By title</option>
+  </select>
+  <label><input type="checkbox" id="onlyNew"> New only</label>
+  <label><input type="checkbox" id="onlySaved"> Saved only</label>
+</div>
+<div class="count" id="count"></div>
+
+<div class="wrap">
+<table>
+  <thead><tr><th>Title</th><th>Req #</th><th>Posted</th></tr></thead>
+  <tbody id="rows">
+    <tr data-title="ai business enablement analyst" data-req="r-0013200" data-days="15" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/New-York-New-York---United-States/AI-Business-Engineer---Investment-Banking-Experience_R-0013200">AI Business Enablement Analyst</a></td><td class="req">R-0013200</td><td class="posted">Posted 15 Days Ago</td></tr>
+    <tr data-title="advisor, supervision- advertising review" data-req="r-0013568" data-days="16" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Advisor--Supervision--Advertising-Review_R-0013568">Advisor, Supervision- Advertising Review</a></td><td class="req">R-0013568</td><td class="posted">Posted 16 Days Ago</td></tr>
+    <tr data-title="alternative investments operations analyst" data-req="r-0013811" data-days="1" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/FL---Saint-Petersburg---880-Carillon-Pkwy/Alternative-Investments-Operations-Analyst_R-0013811">Alternative Investments Operations Analyst</a><span class=badge>NEW</span></td><td class="req">R-0013811</td><td class="posted">Posted Yesterday</td></tr>
+    <tr data-title="analyst, executive consultant" data-req="r-0013609" data-days="16" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Analyst--Executive-Consultant_R-0013609">Analyst, Executive Consultant</a></td><td class="req">R-0013609</td><td class="posted">Posted 16 Days Ago</td></tr>
+    <tr data-title="associate director, software engineering | trading technology" data-req="r-0012652" data-days="2" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Jersey-City-New-Jersey---United-States/Associate-Director---Front-Office-Trade-Desk-Applications_R-0012652">Associate Director, Software Engineering | Trading Technology</a><span class=badge>NEW</span></td><td class="req">R-0012652</td><td class="posted">Posted 2 Days Ago</td></tr>
+    <tr data-title="branch operations specialist (st. petersburg, fl)" data-req="r-0013774" data-days="6" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/FL---Saint-Petersburg---880-Carillon-Pkwy/Branch-Operations-Specialist--St-Petersburg--FL-_R-0013774">Branch Operations Specialist (St. Petersburg, FL)</a></td><td class="req">R-0013774</td><td class="posted">Posted 6 Days Ago</td></tr>
+    <tr data-title="communications manager" data-req="r-0013559" data-days="20" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Communications-Manager_R-0013559-1">Communications Manager</a></td><td class="req">R-0013559</td><td class="posted">Posted 20 Days Ago</td></tr>
+    <tr data-title="communications manager" data-req="r-0013558" data-days="20" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Communications-Manager_R-0013558">Communications Manager</a></td><td class="req">R-0013558</td><td class="posted">Posted 20 Days Ago</td></tr>
+    <tr data-title="compliance sr. manager, enterprise policy governance" data-req="r-0013406" data-days="30" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Compliance-Sr-Manager--Enterprise-Policy-Governance_R-0013406-1">Compliance Sr. Manager, Enterprise Policy Governance</a></td><td class="req">R-0013406</td><td class="posted">Posted 30 Days Ago</td></tr>
+    <tr data-title="decedent solutions associate" data-req="r-0013771" data-days="6" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Decedent-Solutions-Associate_R-0013771">Decedent Solutions Associate</a></td><td class="req">R-0013771</td><td class="posted">Posted 6 Days Ago</td></tr>
+    <tr data-title="desktop support associate analyst" data-req="r-0012939" data-days="14" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Denver-Colorado---United-States/Desktop-Support-Associate-Analyst_R-0012939">Desktop Support Associate Analyst</a></td><td class="req">R-0012939</td><td class="posted">Posted 14 Days Ago</td></tr>
+    <tr data-title="digital process improvement sr. operations manager - st. petersburg, fl" data-req="r-0013725" data-days="9" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Digital-Process-Improvement-Sr-Operations-Manager---St-Petersburg--FL_R-0013725">Digital Process Improvement Sr. Operations Manager - St. Petersburg, FL</a></td><td class="req">R-0013725</td><td class="posted">Posted 9 Days Ago</td></tr>
+    <tr data-title="director, aml &amp; financial crimes – enterprise fraud governance" data-req="r-0013496" data-days="24" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Director--AML---Financial-Crimes---Enterprise-Fraud-Governance_R-0013496">Director, AML &amp; Financial Crimes – Enterprise Fraud Governance</a></td><td class="req">R-0013496</td><td class="posted">Posted 24 Days Ago</td></tr>
+    <tr data-title="director, operations | advisor transitions management" data-req="r-0013077" data-days="30" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Director--Operations---Advisor-Transitions-Management_R-0013077">Director, Operations | Advisor Transitions Management</a></td><td class="req">R-0013077</td><td class="posted">Posted 30 Days Ago</td></tr>
+    <tr data-title="endpoint security analyst" data-req="r-0012816" data-days="16" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Endpoint-Security-Analyst_R-0012816">Endpoint Security Analyst</a></td><td class="req">R-0012816</td><td class="posted">Posted 16 Days Ago</td></tr>
+    <tr data-title="fee based senior associate - reconciliation" data-req="r-0013561" data-days="20" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Fee-Based-Senior-Associate---Reconciliation_R-0013561">Fee Based Senior Associate - Reconciliation</a></td><td class="req">R-0013561</td><td class="posted">Posted 20 Days Ago</td></tr>
+    <tr data-title="fee based senior associate - trading administration" data-req="r-0013521" data-days="22" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Fee-Based-Senior-Associate---Trading-Administration_R-0013521">Fee Based Senior Associate - Trading Administration</a></td><td class="req">R-0013521</td><td class="posted">Posted 22 Days Ago</td></tr>
+    <tr data-title="fiduciary consultant - rj trust" data-req="r-0013822" data-days="1" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Fiduciary-Consultant---RJ-Trust_R-0013822">Fiduciary Consultant - RJ Trust</a><span class=badge>NEW</span></td><td class="req">R-0013822</td><td class="posted">Posted Yesterday</td></tr>
+    <tr data-title="financial analyst" data-req="r-0013702" data-days="10" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/FL---Saint-Petersburg---880-Carillon-Pkwy/Financial-Analyst_R-0013702">Financial Analyst</a></td><td class="req">R-0013702</td><td class="posted">Posted 10 Days Ago</td></tr>
+    <tr data-title="financial analyst" data-req="r-0013523" data-days="22" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/FL---Saint-Petersburg---880-Carillon-Pkwy/Financial-Analyst_R-0013523">Financial Analyst</a></td><td class="req">R-0013523</td><td class="posted">Posted 22 Days Ago</td></tr>
+    <tr data-title="financial crimes advisor, internal audit" data-req="r-0013724" data-days="8" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/FL---Saint-Petersburg---880-Carillon-Pkwy/Financial-Crimes-Advisor--Internal-Audit_R-0013724">Financial Crimes Advisor, Internal Audit</a></td><td class="req">R-0013724</td><td class="posted">Posted 8 Days Ago</td></tr>
+    <tr data-title="financial institutions division - assistant division director - south region" data-req="r-0013800" data-days="2" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Financial-Institutions-Division---Assistant-Division-Director---South-Region_R-0013800">Financial Institutions Division - Assistant Division Director - South Region</a><span class=badge>NEW</span></td><td class="req">R-0013800</td><td class="posted">Posted 2 Days Ago</td></tr>
+    <tr data-title="financial modeling &amp; analysis associate" data-req="r-0013514" data-days="23" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Louis-Missouri---United-States/Financial-Modeling---Analysis-Associate_R-0013514">Financial Modeling &amp; Analysis Associate</a></td><td class="req">R-0013514</td><td class="posted">Posted 23 Days Ago</td></tr>
+    <tr data-title="head of national advisor recruiting" data-req="r-0013355" data-days="24" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Head-of-National-Advisor-Recruiting_R-0013355">Head of National Advisor Recruiting</a></td><td class="req">R-0013355</td><td class="posted">Posted 24 Days Ago</td></tr>
+    <tr data-title="it compliance senior manager" data-req="r-0013493" data-days="24" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/IT-Compliance-Senior-Manager_R-0013493">IT Compliance Senior Manager</a></td><td class="req">R-0013493</td><td class="posted">Posted 24 Days Ago</td></tr>
+    <tr data-title="insurance commissions assoc" data-req="r-0013826" data-days="1" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/FL---Saint-Petersburg---880-Carillon-Pkwy-Tower-4/Insurance-Commissions-Assoc_R-0013826">Insurance Commissions Assoc</a><span class=badge>NEW</span></td><td class="req">R-0013826</td><td class="posted">Posted Yesterday</td></tr>
+    <tr data-title="internal wholesaler- raymond james investment management" data-req="r-0013413" data-days="7" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Internal-Wholesaler--Raymond-James-Investment-Management_R-0013413">Internal Wholesaler- Raymond James Investment Management</a></td><td class="req">R-0013413</td><td class="posted">Posted 7 Days Ago</td></tr>
+    <tr data-title="investment banking vice president - m&amp;a (saint petersburg, fl)" data-req="r-0013741" data-days="8" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Investment-Banking-Vice-President---M-A--Saint-Petersburg--FL-_R-0013741">Investment Banking Vice President - M&amp;A (Saint Petersburg, FL)</a></td><td class="req">R-0013741</td><td class="posted">Posted 8 Days Ago</td></tr>
+    <tr data-title="lead application security architect" data-req="r-0013447" data-days="13" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Lead-Application-Security-Architect_R-0013447">Lead Application Security Architect</a></td><td class="req">R-0013447</td><td class="posted">Posted 13 Days Ago</td></tr>
+    <tr data-title="lead backend java developer" data-req="r-0013851" data-days="0" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Lead-Backend-Java-Developer_R-0013851">Lead Backend Java Developer</a><span class=badge>NEW</span></td><td class="req">R-0013851</td><td class="posted">Posted Today</td></tr>
+    <tr data-title="lead data analyst – enterprise data analytics" data-req="r-0013705" data-days="10" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Lead-Data-Analyst---Enterprise-Data-Analytics_R-0013705">Lead Data Analyst – Enterprise Data Analytics</a></td><td class="req">R-0013705</td><td class="posted">Posted 10 Days Ago</td></tr>
+    <tr data-title="lead engineer — ai developer platform" data-req="r-0013459" data-days="20" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Lead-Engineer---AI-Developer-Platform_R-0013459">Lead Engineer — AI Developer Platform</a></td><td class="req">R-0013459</td><td class="posted">Posted 20 Days Ago</td></tr>
+    <tr data-title="lead full stack engineer, wealth management technology" data-req="r-0013765" data-days="6" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Lead-Full-Stack-Engineer--Wealth-Management-Technology_R-0013765">Lead Full Stack Engineer, Wealth Management Technology</a></td><td class="req">R-0013765</td><td class="posted">Posted 6 Days Ago</td></tr>
+    <tr data-title="lead opentext exstream developer" data-req="r-0013675" data-days="13" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Application-Developer-III_R-0013675">Lead OpenText Exstream Developer</a></td><td class="req">R-0013675</td><td class="posted">Posted 13 Days Ago</td></tr>
+    <tr data-title="lead technical analyst" data-req="r-0013850" data-days="0" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Lead-Technical-Analyst_R-0013850-1">Lead Technical Analyst</a><span class=badge>NEW</span></td><td class="req">R-0013850</td><td class="posted">Posted Today</td></tr>
+    <tr data-title="lead ui engineer (angular)" data-req="r-0013746" data-days="1" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Jersey-City-New-Jersey---United-States/Lead-UI-Engineer--Angular-_R-0013746">Lead UI Engineer (Angular)</a><span class=badge>NEW</span></td><td class="req">R-0013746</td><td class="posted">Posted Yesterday</td></tr>
+    <tr data-title="lead vulnerability research engineer" data-req="r-0013854" data-days="0" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Lead-Vulnerability-Research-Engineer_R-0013854-1">Lead Vulnerability Research Engineer</a><span class=badge>NEW</span></td><td class="req">R-0013854</td><td class="posted">Posted Today</td></tr>
+    <tr data-title="loan operations residential portfolio manager - rj bank" data-req="r-0013737" data-days="8" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Loan-Operations-Residential-Portfolio-Manager---RJ-Bank_R-0013737">Loan Operations Residential Portfolio Manager - RJ Bank</a></td><td class="req">R-0013737</td><td class="posted">Posted 8 Days Ago</td></tr>
+    <tr data-title="manager – etl testing &amp; test data management" data-req="r-0013322" data-days="14" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Manager---ETL-Testing---Test-Data-Management_R-0013322">Manager – ETL Testing &amp; Test Data Management</a></td><td class="req">R-0013322</td><td class="posted">Posted 14 Days Ago</td></tr>
+    <tr data-title="manager, annuity product specialist team" data-req="r-0013732" data-days="9" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/FL---Saint-Petersburg---880-Carillon-Pkwy-Tower-4/Manager--Annuity-Product-Specialist-Team_R-0013732">Manager, Annuity Product Specialist Team</a></td><td class="req">R-0013732</td><td class="posted">Posted 9 Days Ago</td></tr>
+    <tr data-title="manager, early careers training and development" data-req="r-0012969" data-days="10" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Manager--Early-Careers-Training-and-Development_R-0012969">Manager, Early Careers Training and Development</a></td><td class="req">R-0012969</td><td class="posted">Posted 10 Days Ago</td></tr>
+    <tr data-title="manager, financial crimes analytics" data-req="r-0013560" data-days="20" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Manager--Financial-Crimes-Analytics_R-0013560">Manager, Financial Crimes Analytics</a></td><td class="req">R-0013560</td><td class="posted">Posted 20 Days Ago</td></tr>
+    <tr data-title="manager, software engineering" data-req="r-0012507" data-days="14" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Manager--Software-Engineering_R-0012507">Manager, Software Engineering</a></td><td class="req">R-0012507</td><td class="posted">Posted 14 Days Ago</td></tr>
+    <tr data-title="manager, software engineering" data-req="r-0012348" data-days="14" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Manager--Software-Engineering_R-0012348">Manager, Software Engineering</a></td><td class="req">R-0012348</td><td class="posted">Posted 14 Days Ago</td></tr>
+    <tr data-title="manager, software engineering" data-req="r-0012347" data-days="14" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Manager--Software-Engineering_R-0012347">Manager, Software Engineering</a></td><td class="req">R-0012347</td><td class="posted">Posted 14 Days Ago</td></tr>
+    <tr data-title="manager, supervision – advertising review" data-req="r-0013756" data-days="3" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Manager--Supervision---Advertising-Review_R-0013756">Manager, Supervision – Advertising Review</a></td><td class="req">R-0013756</td><td class="posted">Posted 3 Days Ago</td></tr>
+    <tr data-title="manager, tech infrastructure (messaging &amp; collaboration operations)" data-req="r-0013697" data-days="8" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Manager--Tech-Infrastructure--Messaging---Collaboration-Operations-_R-0013697">Manager, Tech Infrastructure (Messaging &amp; Collaboration Operations)</a></td><td class="req">R-0013697</td><td class="posted">Posted 8 Days Ago</td></tr>
+    <tr data-title="oracle weblogic administrator" data-req="r-0013401" data-days="8" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Senior-Data-Integration-Administrator--ODI---Ab-Initio-_R-0013401-1">Oracle Weblogic Administrator</a></td><td class="req">R-0013401</td><td class="posted">Posted 8 Days Ago</td></tr>
+    <tr data-title="portfolio specialist – asset management service" data-req="r-0013426" data-days="29" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Portfolio-Specialist---Asset-Management-Service_R-0013426">Portfolio Specialist – Asset Management Service</a></td><td class="req">R-0013426</td><td class="posted">Posted 29 Days Ago</td></tr>
+    <tr data-title="portfolio specialist – asset management service" data-req="r-0013428" data-days="29" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Portfolio-Specialist---Asset-Management-Service_R-0013428">Portfolio Specialist – Asset Management Service</a></td><td class="req">R-0013428</td><td class="posted">Posted 29 Days Ago</td></tr>
+    <tr data-title="pricing analyst - rj bank" data-req="r-0013456" data-days="28" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Pricing-Analyst---RJ-Bank_R-0013456">Pricing Analyst - RJ Bank</a></td><td class="req">R-0013456</td><td class="posted">Posted 28 Days Ago</td></tr>
+    <tr data-title="principal engineer, technology" data-req="r-0013458" data-days="16" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Lead-Developer-III_R-0013458">Principal Engineer, Technology</a></td><td class="req">R-0013458</td><td class="posted">Posted 16 Days Ago</td></tr>
+    <tr data-title="product partner relationship manager" data-req="r-0013627" data-days="14" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Product-Partner-Relationship-Manager_R-0013627">Product Partner Relationship Manager</a></td><td class="req">R-0013627</td><td class="posted">Posted 14 Days Ago</td></tr>
+    <tr data-title="senior administrative assistant" data-req="r-0013370" data-days="29" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/New-York-New-York---United-States/Senior-Administrative-Assistant_R-0013370">Senior Administrative Assistant</a></td><td class="req">R-0013370</td><td class="posted">Posted 29 Days Ago</td></tr>
+    <tr data-title="senior advisor, compliance - associate activities" data-req="r-0013542" data-days="20" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Senior-Advisor--Compliance---Associate-Activities_R-0013542">Senior Advisor, Compliance - Associate Activities</a></td><td class="req">R-0013542</td><td class="posted">Posted 20 Days Ago</td></tr>
+    <tr data-title="senior advisor, supervision - dr/sarc/money movement (remote option available)" data-req="r-0013827" data-days="0" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Senior-Advisor--Supervision---DR-SARC-Money-Movement--Remote-Option-Available-_R-0013827">Senior Advisor, Supervision - DR/SARC/Money Movement (Remote Option Available)</a><span class=badge>NEW</span></td><td class="req">R-0013827</td><td class="posted">Posted Today</td></tr>
+    <tr data-title="senior analyst, aml fcm client intelligence unit" data-req="r-0013556" data-days="20" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Senior-Analyst--AML-FCM-Client-Intelligence-Unit_R-0013556">Senior Analyst, AML FCM Client Intelligence Unit</a></td><td class="req">R-0013556</td><td class="posted">Posted 20 Days Ago</td></tr>
+    <tr data-title="senior analyst, it change management" data-req="r-0013699" data-days="10" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Senior-Analyst--IT-Change-Management_R-0013699">Senior Analyst, IT Change Management</a></td><td class="req">R-0013699</td><td class="posted">Posted 10 Days Ago</td></tr>
+    <tr data-title="senior client service associate - rj bank" data-req="r-0013552" data-days="1" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Senior-Client-Services-Associate---RJ-Bank_R-0013552">Senior Client Service Associate - RJ Bank</a></td><td class="req">R-0013552</td><td class="posted">Posted Yesterday</td></tr>
+    <tr data-title="senior executive assistant to the ceo and chief of staff" data-req="r-0013824" data-days="1" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/FL---Saint-Petersburg---880-Carillon-Pkwy/Senior-Executive-Assistant-to-the-CEO-and-Chief-of-Staff_R-0013824-1">Senior Executive Assistant to the CEO and Chief of Staff</a><span class=badge>NEW</span></td><td class="req">R-0013824</td><td class="posted">Posted Yesterday</td></tr>
+    <tr data-title="senior manager, consolidations" data-req="r-0012473" data-days="1" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Senior-Manager--Consolidations_R-0012473-1">Senior Manager, Consolidations</a><span class=badge>NEW</span></td><td class="req">R-0012473</td><td class="posted">Posted Yesterday</td></tr>
+    <tr data-title="senior mortgage processor - rj bank" data-req="r-0013799" data-days="3" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Senior-Mortgage-Processor---RJ-Bank_R-0013799-1">Senior Mortgage Processor - RJ Bank</a><span class=badge>NEW</span></td><td class="req">R-0013799</td><td class="posted">Posted 3 Days Ago</td></tr>
+    <tr data-title="senior product manager | advisor technology" data-req="r-0013814" data-days="1" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Senior-Product-Manager---Advisor-Technology_R-0013814">Senior Product Manager | Advisor Technology</a><span class=badge>NEW</span></td><td class="req">R-0013814</td><td class="posted">Posted Yesterday</td></tr>
+    <tr data-title="senior technical business &amp; data analyst" data-req="r-0013698" data-days="10" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Senior-Technical-Business---Data-Analyst_R-0013698">Senior Technical Business &amp; Data Analyst</a></td><td class="req">R-0013698</td><td class="posted">Posted 10 Days Ago</td></tr>
+    <tr data-title="senior technology project manager" data-req="r-0013621" data-days="9" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Senior-Technology-Project-Manager_R-0013621-1">Senior Technology Project Manager</a></td><td class="req">R-0013621</td><td class="posted">Posted 9 Days Ago</td></tr>
+    <tr data-title="service associate - series 7 &amp; 63 required" data-req="r-0013769" data-days="6" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Remote-Florida---United-States/Service-Associate---Series-7---63-Required_R-0013769">Service Associate - Series 7 &amp; 63 Required</a></td><td class="req">R-0013769</td><td class="posted">Posted 6 Days Ago</td></tr>
+    <tr data-title="sr associate communications manager" data-req="r-0013798" data-days="2" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Sr-Associate-Communications-Manager_R-0013798">Sr Associate Communications Manager</a><span class=badge>NEW</span></td><td class="req">R-0013798</td><td class="posted">Posted 2 Days Ago</td></tr>
+    <tr data-title="sr. advisor, regulatory reporting and operations compliance" data-req="r-0013618" data-days="15" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Sr-Advisor--Regulatory-Reporting-and-Operations-Compliance_R-0013618">Sr. Advisor, Regulatory Reporting and Operations Compliance</a></td><td class="req">R-0013618</td><td class="posted">Posted 15 Days Ago</td></tr>
+    <tr data-title="sr. analyst aml-financial intelligence unit (fiu) transaction monitoring" data-req="r-0013829" data-days="1" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Sr-Analyst-AML-Financial-Intelligence-Unit--FIU--Transaction-Monitoring_R-0013829">Sr. Analyst AML-Financial Intelligence Unit (FIU) Transaction Monitoring</a><span class=badge>NEW</span></td><td class="req">R-0013829</td><td class="posted">Posted Yesterday</td></tr>
+    <tr data-title="sr. associate - new accounts: entity &amp; foreign team" data-req="r-0013748" data-days="3" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Sr-Associate---New-Accounts--Entity---Foreign-Team_R-0013748">Sr. Associate - New Accounts: Entity &amp; Foreign Team</a></td><td class="req">R-0013748</td><td class="posted">Posted 3 Days Ago</td></tr>
+    <tr data-title="sr. associate - new accounts: legal documents team" data-req="r-0013367" data-days="3" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Sr-Associate---New-Accounts--Legal-Documents-Team_R-0013367">Sr. Associate - New Accounts: Legal Documents Team</a></td><td class="req">R-0013367</td><td class="posted">Posted 3 Days Ago</td></tr>
+    <tr data-title="sr. associate - new accounts: plan &amp; trust team" data-req="r-0013366" data-days="3" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Job-Posting-Title-Sr-Associate---New-Accounts--Plan---Trust-Team_R-0013366">Sr. Associate - New Accounts: Plan &amp; Trust Team</a></td><td class="req">R-0013366</td><td class="posted">Posted 3 Days Ago</td></tr>
+    <tr data-title="sr. associate - new accounts: transitions &amp; sos teams" data-req="r-0013369" data-days="3" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Sr-Associate---New-Accounts--SOS---Transitions-Team_R-0013369">Sr. Associate - New Accounts: Transitions &amp; SOS Teams</a></td><td class="req">R-0013369</td><td class="posted">Posted 3 Days Ago</td></tr>
+    <tr data-title="sr. clearance associate i st. petersburg, fl" data-req="r-0013412" data-days="21" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Sr-Clearance-Associate-I-St-Petersburg--FL_R-0013412">Sr. Clearance Associate I St. Petersburg, FL</a></td><td class="req">R-0013412</td><td class="posted">Posted 21 Days Ago</td></tr>
+    <tr data-title="sr. infoblox engineer" data-req="r-0013389" data-days="29" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Sr-Infoblox-Engineer_R-0013389-1">Sr. Infoblox Engineer</a></td><td class="req">R-0013389</td><td class="posted">Posted 29 Days Ago</td></tr>
+    <tr data-title="sr. manager, asset management - renewable energy investments (st. louis or st. pete)" data-req="r-0013446" data-days="29" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Louis-Missouri---United-States/Sr-Manager--Asset-Management---Renewable-Energy-Investments--St-Louis-or-St-Pete-_R-0013446">Sr. Manager, Asset Management - Renewable Energy Investments (St. Louis or St. Pete)</a></td><td class="req">R-0013446</td><td class="posted">Posted 29 Days Ago</td></tr>
+    <tr data-title="sr. manager, internal audit" data-req="r-0012872" data-days="0" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/FL---Saint-Petersburg---880-Carillon-Pkwy/Sr-Manager--Internal-Audit_R-0012872">Sr. Manager, Internal Audit</a><span class=badge>NEW</span></td><td class="req">R-0012872</td><td class="posted">Posted Today</td></tr>
+    <tr data-title="sr. program analyst - office of the cio" data-req="r-0013435" data-days="27" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Sr-Program-Analyst---Office-of-the-CIO_R-0013435">Sr. Program Analyst - Office of the CIO</a></td><td class="req">R-0013435</td><td class="posted">Posted 27 Days Ago</td></tr>
+    <tr data-title="sr. project consultant | mutual fund operations" data-req="r-0013751" data-days="7" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Sr-Project-Consultant---Mutual-Fund-Operations_R-0013751-1">Sr. Project Consultant | Mutual Fund Operations</a></td><td class="req">R-0013751</td><td class="posted">Posted 7 Days Ago</td></tr>
+    <tr data-title="staff accountant - rj bank" data-req="r-0013571" data-days="14" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Staff-Accountant---RJ-Bank_R-0013571">Staff Accountant - RJ Bank</a></td><td class="req">R-0013571</td><td class="posted">Posted 14 Days Ago</td></tr>
+    <tr data-title="technology finance manager | fp&amp;a" data-req="r-0012971" data-days="2" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Technology-Finance-Manager---FP-A_R-0012971">Technology Finance Manager | FP&amp;A</a><span class=badge>NEW</span></td><td class="req">R-0012971</td><td class="posted">Posted 2 Days Ago</td></tr>
+    <tr data-title="trading support associate iii - rebalance support" data-req="r-0013592" data-days="6" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Memphis-Tennessee---United-States/Trading-Support-Associate-III---Rebalance-Support_R-0013592">Trading Support Associate III - Rebalance Support</a></td><td class="req">R-0013592</td><td class="posted">Posted 6 Days Ago</td></tr>
+    <tr data-title="trust officer - raymond james trust n/a" data-req="r-0012836" data-days="2" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Trust-Officer---Raymond-James-Trust-N-A_R-0012836">Trust Officer - Raymond James Trust N/A</a><span class=badge>NEW</span></td><td class="req">R-0012836</td><td class="posted">Posted 2 Days Ago</td></tr>
+    <tr data-title="trust operations representative" data-req="r-0013787" data-days="2" data-new="1"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Trust-Operations-Representative_R-0013787">Trust Operations Representative</a><span class=badge>NEW</span></td><td class="req">R-0013787</td><td class="posted">Posted 2 Days Ago</td></tr>
+    <tr data-title="vp of investor relations" data-req="r-0013513" data-days="23" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Louis-Missouri---United-States/VP-of-Investor-Relations_R-0013513">VP of Investor Relations</a></td><td class="req">R-0013513</td><td class="posted">Posted 23 Days Ago</td></tr>
+    <tr data-title="vp, technology risk assurance" data-req="r-0013468" data-days="27" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/VP--Technology-Risk-Assurance_R-0013468">VP, Technology Risk Assurance</a></td><td class="req">R-0013468</td><td class="posted">Posted 27 Days Ago</td></tr>
+    <tr data-title="vice president | enterprise security architecture" data-req="r-0013515" data-days="3" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Vice-President---Enterprise-Security-Architecture_R-0013515">Vice President | Enterprise Security Architecture</a></td><td class="req">R-0013515</td><td class="posted">Posted 3 Days Ago</td></tr>
+    <tr data-title="vice president, wealth management technology" data-req="r-0013745" data-days="8" data-new="0"><td><button type="button" class="save" aria-label="Save job"></button><a href="https://raymondjames.wd1.myworkdayjobs.com/en-US/RaymondJamesCareers/job/Saint-Petersburg-Florida---United-States/Vice-President--Wealth-Management-Technology_R-0013745">Vice President, Wealth Management Technology</a></td><td class="req">R-0013745</td><td class="posted">Posted 8 Days Ago</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="empty" id="empty" hidden>No jobs match.</p>
+<footer><a href="https://github.com/tanthai028/RJTracker/actions/workflows/check-jobs.yml">Run the digest workflow on GitHub</a> (send, resend or refresh this page; repo owner only)</footer>
+</main>
+<script>
+  const themeBtn = document.getElementById("theme");
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  function isDark() {
+    const t = document.documentElement.dataset.theme;
+    return t ? t === "dark" : darkQuery.matches;
+  }
+  function paintThemeButton() { themeBtn.textContent = isDark() ? "Light mode" : "Dark mode"; }
+  try {
+    const saved = localStorage.getItem("rj-theme");
+    if (saved) document.documentElement.dataset.theme = saved;
+  } catch (e) {}
+  themeBtn.addEventListener("click", () => {
+    const next = isDark() ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("rj-theme", next); } catch (e) {}
+    paintThemeButton();
+  });
+  darkQuery.addEventListener("change", paintThemeButton);
+  paintThemeButton();
+
+  const q = document.getElementById("q");
+  const sort = document.getElementById("sort");
+  const onlyNew = document.getElementById("onlyNew");
+  const onlySaved = document.getElementById("onlySaved");
+  const body = document.getElementById("rows");
+  const rows = Array.from(body.rows);
+
+  // Saved jobs are kept per browser, keyed by req #, so they carry over to later reports
+  let saved = new Set();
+  try { saved = new Set(JSON.parse(localStorage.getItem("rj-saved") || "[]")); } catch (e) {}
+  function paintSave(row) {
+    const btn = row.querySelector(".save");
+    const on = saved.has(row.dataset.req);
+    btn.textContent = on ? "\u2605" : "\u2606";
+    btn.setAttribute("aria-pressed", on);
+    btn.title = on ? "Remove from saved" : "Save";
+  }
+  rows.forEach(paintSave);
+  body.addEventListener("click", e => {
+    const btn = e.target.closest(".save");
+    if (!btn) return;
+    const row = btn.closest("tr");
+    if (saved.has(row.dataset.req)) saved.delete(row.dataset.req); else saved.add(row.dataset.req);
+    try { localStorage.setItem("rj-saved", JSON.stringify([...saved])); } catch (e) {}
+    paintSave(row);
+    if (onlySaved.checked) update();
+  });
+
+  function update() {
+    const term = q.value.trim().toLowerCase();
+    const sorters = {
+      newest: (a, b) => a.dataset.days - b.dataset.days || a.dataset.title.localeCompare(b.dataset.title),
+      oldest: (a, b) => b.dataset.days - a.dataset.days || a.dataset.title.localeCompare(b.dataset.title),
+      title: (a, b) => a.dataset.title.localeCompare(b.dataset.title),
+    };
+    let shown = 0;
+    // Rebuild the table from matching rows only, so no stylesheet can bring hidden rows back
+    body.textContent = "";
+    rows.sort(sorters[sort.value]).forEach(row => {
+      const match = (!term || row.dataset.title.includes(term) || row.dataset.req.includes(term))
+        && (!onlyNew.checked || row.dataset.new === "1")
+        && (!onlySaved.checked || saved.has(row.dataset.req));
+      if (match) {
+        shown++;
+        body.appendChild(row);
+      }
+    });
+    document.getElementById("count").textContent = shown === rows.length ? `${shown} jobs` : `${shown} of ${rows.length} jobs`;
+    document.getElementById("empty").hidden = shown > 0;
+  }
+
+  // Listen to both events: older Safari only fires "change" for selects and checkboxes
+  [q, sort, onlyNew, onlySaved].forEach(el => ["input", "change"].forEach(type => el.addEventListener(type, update)));
+  update();
+</script>
+</body>
+</html>
