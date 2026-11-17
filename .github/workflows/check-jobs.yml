@@ -2,9 +2,11 @@ name: RJ Jobs Digest
 
 on:
   schedule:
-    # Mondays and Thursdays, 1:17 PM UTC = 9:17 AM EDT / 8:17 AM EST. Covers both EST and EDT without chasing DST.
-    # Off the hour on purpose: fewer workflows start then, so Workday is less likely to rate-limit the runner
-    - cron: "17 13 * * 1,4"
+    # 8 AM Eastern on Mondays and Thursdays. Cron only speaks UTC, so both candidates are listed:
+    # 12:00 UTC is 8 AM during EDT (summer), 13:00 UTC is 8 AM during EST (winter).
+    # The "when" job below lets only the one that matches today's daylight-saving time through.
+    - cron: "0 12 * * 1,4"
+    - cron: "0 13 * * 1,4"
   workflow_dispatch:
     inputs:
       mode:
@@ -23,7 +25,31 @@ permissions:
   id-token: write
 
 jobs:
+  when:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.gate.outputs.run }}
+    steps:
+      - name: Run only the 8 AM Eastern schedule
+        id: gate
+        env:
+          EVENT: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          zone=$(TZ=America/New_York date +%Z)
+          run=true
+          if [ "$EVENT" = "schedule" ]; then
+            case "$zone/$SCHEDULE" in
+              "EDT/0 12 * * 1,4" | "EST/0 13 * * 1,4") run=true ;;
+              *) run=false ;;
+            esac
+          fi
+          echo "Eastern time is $zone, schedule '$SCHEDULE': run=$run"
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
   check:
+    needs: when
+    if: needs.when.outputs.run == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
