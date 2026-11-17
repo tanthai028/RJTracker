@@ -2,8 +2,9 @@ name: RJ Jobs Digest
 
 on:
   schedule:
-    # Mondays and Thursdays, 1 PM UTC = 9 AM EDT / 8 AM EST. Covers both EST and EDT without chasing DST
-    - cron: "0 13 * * 1,4"
+    # Mondays and Thursdays, 1:17 PM UTC = 9:17 AM EDT / 8:17 AM EST. Covers both EST and EDT without chasing DST.
+    # Off the hour on purpose: fewer workflows start then, so Workday is less likely to rate-limit the runner
+    - cron: "17 13 * * 1,4"
   workflow_dispatch:
     inputs:
       mode:
