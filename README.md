@@ -22,7 +22,7 @@ I set myself a few rules: it had to be free, it had to run without my laptop bei
 
 ## What it does
 
-- **Every Monday and Thursday at 9 AM ET**, it pulls every listing within the board's Saint Petersburg, FL distance filter.
+- **Every Monday and Thursday at 6 AM ET**, it pulls every listing within the board's Saint Petersburg, FL distance filter.
 - **It skips stale postings.** Anything Workday labels "Posted 30+ Days Ago" is left out, since those roles are rarely still hiring.
 - **It compares with the last digest** and finds the postings that are new since then.
 - **It posts one short Discord message:** a link to the full list, the 5 newest postings, and a count of the rest. If nothing is new, it stays silent.
@@ -70,7 +70,8 @@ A few decisions worth explaining:
 - **Deploy first, then post.** The digest waits in `outbox.json` until the Pages deploy finishes, so the link works the moment the message arrives.
 - **The repo is the database.** GitHub Actions runners are thrown away after every run, so state has to live somewhere. The workflow commits `previous_jobs.json`, `last_digest.json` and the reports back to the repo. It's free, it's versioned, and the history doubles as a log of when each posting appeared.
 - **Requisition IDs as keys.** Titles can be edited and reused, but a requisition number identifies one posting. Diffing on IDs avoids false "new posting" alerts.
-- **The cron runs in UTC.** `0 13 * * 1,4` lands at 9 AM in summer and 8 AM in winter. That was simpler than writing daylight-saving logic for a job where an hour doesn't matter.
+- **The cron runs in UTC, so it's scheduled twice.** `0 10` and `0 11` UTC are both listed, and a small first job keeps only the one that's 6 AM in New York under the current daylight-saving time. It's 6 AM rather than 8 because GitHub often starts scheduled runs late, sometimes by hours.
+- **Workday sometimes rate-limits GitHub's shared runners.** A 429 or 5xx from Workday is retried with a growing wait (10s, 20s, 40s, 80s) before the run gives up.
 - **The webhook URL is a GitHub secret**, never in the code.
 
 ## What I learned

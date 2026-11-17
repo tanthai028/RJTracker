@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import sys
+import time
 from datetime import date
 from html import escape
 
@@ -35,6 +36,33 @@ HEADERS = {
 }
 
 
+# Workday answers 429 when too many requests come from GitHub's shared runners; these pass with a retry
+RETRY_STATUSES = {429, 500, 502, 503, 504}
+RETRY_ATTEMPTS = 5
+MAX_RETRY_WAIT = 120
+
+
+def post_with_retry(url, payload):
+    """POST to Workday, retrying temporary refusals and network errors with an increasing wait."""
+    for attempt in range(1, RETRY_ATTEMPTS + 1):
+        try:
+            resp = requests.post(url, headers=HEADERS, json=payload, timeout=30)
+        except (requests.ConnectionError, requests.Timeout):
+            if attempt == RETRY_ATTEMPTS:
+                raise
+            resp = None
+        if resp is not None and (resp.status_code not in RETRY_STATUSES or attempt == RETRY_ATTEMPTS):
+            resp.raise_for_status()
+            return resp
+        # Wait as long as Workday asks, if it says; otherwise 10s, 20s, 40s, 80s
+        retry_after = resp.headers.get("Retry-After", "") if resp is not None else ""
+        wait = int(retry_after) if retry_after.isdigit() else 10 * 2 ** (attempt - 1)
+        wait = min(wait, MAX_RETRY_WAIT)
+        reason = f"HTTP {resp.status_code}" if resp is not None else "a network error"
+        print(f"  Workday returned {reason}; retrying in {wait}s (attempt {attempt + 1} of {RETRY_ATTEMPTS})...")
+        time.sleep(wait)
+
+
 def fetch_all_jobs():
     """Fetch all jobs from the Workday API, paginating if needed."""
     jobs = []
@@ -48,8 +76,9 @@ def fetch_all_jobs():
             "offset": offset,
             "searchText": "",
         }
-        resp = requests.post(WORKDAY_URL, headers=HEADERS, json=payload, timeout=30)
-        resp.raise_for_status()
+        if offset:
+            time.sleep(1)  # space out page requests so Workday doesn't rate-limit us
+        resp = post_with_retry(WORKDAY_URL, payload)
         data = resp.json()
 
         postings = data.get("jobPostings", [])
