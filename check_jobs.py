@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import random
 import sys
 import time
 from datetime import date
@@ -27,26 +28,46 @@ SITE_URL = "https://tanthai028.github.io/RJTracker"
 ACTIONS_URL = "https://github.com/tanthai028/RJTracker/actions/workflows/check-jobs.yml"
 
 HEADERS = {
+    "Accept": "application/json",
+    "Accept-Language": "en-US",
     "Content-Type": "application/json",
+    "Origin": "https://raymondjames.wd1.myworkdayjobs.com",
+    "Referer": BASE_URL,
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/120.0.0.0 Safari/537.36"
+        "Chrome/131.0.0.0 Safari/537.36"
     ),
 }
 
 
-# Workday answers 429 when too many requests come from GitHub's shared runners; these pass with a retry
+# Workday answers 429 when too many requests come from GitHub's shared runners, sometimes for minutes
 RETRY_STATUSES = {429, 500, 502, 503, 504}
-RETRY_ATTEMPTS = 5
-MAX_RETRY_WAIT = 120
+RETRY_ATTEMPTS = 7
+MAX_RETRY_WAIT = 180
+# Pause between result pages; back-to-back pages are what Workday throttles
+PAGE_PAUSE = 5
 
 
-def post_with_retry(url, payload):
+def new_session():
+    """One browser-like session: keeps cookies and the connection, like a person on the careers page.
+
+    Opening the careers page first picks up the cookies Workday's own site would send with its API calls.
+    """
+    session = requests.Session()
+    session.headers.update({k: v for k, v in HEADERS.items() if k != "Content-Type"})
+    try:
+        session.get(BASE_URL, headers={"Accept": "text/html"}, timeout=30)
+    except requests.RequestException as e:
+        print(f"  Couldn't open the careers page first ({e.__class__.__name__}); continuing without its cookies.")
+    return session
+
+
+def post_with_retry(session, url, payload):
     """POST to Workday, retrying temporary refusals and network errors with an increasing wait."""
     for attempt in range(1, RETRY_ATTEMPTS + 1):
         try:
-            resp = requests.post(url, headers=HEADERS, json=payload, timeout=30)
+            resp = session.post(url, headers=HEADERS, json=payload, timeout=30)
         except (requests.ConnectionError, requests.Timeout):
             if attempt == RETRY_ATTEMPTS:
                 raise
@@ -54,12 +75,12 @@ def post_with_retry(url, payload):
         if resp is not None and (resp.status_code not in RETRY_STATUSES or attempt == RETRY_ATTEMPTS):
             resp.raise_for_status()
             return resp
-        # Wait as long as Workday asks, if it says; otherwise 10s, 20s, 40s, 80s
+        # Wait as long as Workday asks, if it says; otherwise 15s, 30s, 60s, 120s, then 180s, plus a little jitter
         retry_after = resp.headers.get("Retry-After", "") if resp is not None else ""
-        wait = int(retry_after) if retry_after.isdigit() else 10 * 2 ** (attempt - 1)
-        wait = min(wait, MAX_RETRY_WAIT)
+        wait = int(retry_after) if retry_after.isdigit() else 15 * 2 ** (attempt - 1)
+        wait = min(wait, MAX_RETRY_WAIT) + random.uniform(0, 5)
         reason = f"HTTP {resp.status_code}" if resp is not None else "a network error"
-        print(f"  Workday returned {reason}; retrying in {wait}s (attempt {attempt + 1} of {RETRY_ATTEMPTS})...")
+        print(f"  Workday returned {reason}; retrying in {wait:.0f}s (attempt {attempt + 1} of {RETRY_ATTEMPTS})...")
         time.sleep(wait)
 
 
@@ -67,7 +88,8 @@ def fetch_all_jobs():
     """Fetch all jobs from the Workday API, paginating if needed."""
     jobs = []
     offset = 0
-    limit = 20
+    limit = 20  # Workday's maximum page size
+    session = new_session()
 
     while True:
         payload = {
@@ -77,8 +99,8 @@ def fetch_all_jobs():
             "searchText": "",
         }
         if offset:
-            time.sleep(1)  # space out page requests so Workday doesn't rate-limit us
-        resp = post_with_retry(WORKDAY_URL, payload)
+            time.sleep(PAGE_PAUSE)
+        resp = post_with_retry(session, WORKDAY_URL, payload)
         data = resp.json()
 
         postings = data.get("jobPostings", [])
@@ -87,6 +109,7 @@ def fetch_all_jobs():
         # Workday only reports the real total on the first page; later pages return 0
         if offset == 0:
             total = data.get("total", 0)
+        print(f"  Page {offset // limit + 1}: {len(postings)} posting(s).")
         offset += limit
         if not postings or offset >= total:
             break

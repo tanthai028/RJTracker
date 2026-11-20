@@ -51,6 +51,8 @@ jobs:
     needs: when
     if: needs.when.outputs.run == 'true'
     runs-on: ubuntu-latest
+    # Workday retries can take several minutes; stop a stuck run well before GitHub's 6-hour default
+    timeout-minutes: 45
     environment:
       name: github-pages
 
